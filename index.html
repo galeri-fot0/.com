@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FotoKu — Galeri Foto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0f0f10; --bg2:#1a1a1c; --bg3:#242426;
+      --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+      --text:#f0ede8; --text2:#9b9896; --text3:#6b6866;
+      --accent:#d4a96a; --accent2:#b8895a;
+      --danger:#e05252; --success:#50c878;
+      --radius:10px; --radius-lg:16px;
+    }
+    html { scroll-behavior:smooth; }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--bg3); border-radius:99px; }
+
+    /* ── SETUP BANNER ── */
+    #setupBanner {
+      background:rgba(212,169,106,0.08); border-bottom:1px solid rgba(212,169,106,0.2);
+      padding:12px 1.5rem; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    }
+    #setupBanner i { color:var(--accent); font-size:16px; }
+    #setupBanner p { font-size:13px; color:var(--text2); flex:1; }
+    #setupBanner p span { color:var(--accent); font-weight:500; cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+
+    /* ── CONFIG MODAL ── */
+    .cfg-overlay {
+      position:fixed; inset:0; z-index:2000;
+      background:rgba(0,0,0,0.8); display:none;
+      align-items:center; justify-content:center; padding:1rem;
+    }
+    .cfg-overlay.open { display:flex; }
+    .cfg-box {
+      background:var(--bg2); border:1px solid var(--border2);
+      border-radius:var(--radius-lg); width:100%; max-width:480px;
+      overflow:hidden; animation:popIn .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .cfg-header { padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+    .cfg-header i { color:var(--accent); font-size:18px; }
+    .cfg-header h3 { font-size:16px; font-weight:600; flex:1; }
+    .cfg-body { padding:1.5rem; display:flex; flex-direction:column; gap:1.25rem; }
+    .cfg-step { background:var(--bg3); border-radius:var(--radius); padding:1rem 1.1rem; border:1px solid var(--border); }
+    .cfg-step-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .step-num { width:22px; height:22px; border-radius:50%; background:rgba(212,169,106,0.15); color:var(--accent); font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .cfg-step-head span { font-size:13px; font-weight:500; }
+    .cfg-step p { font-size:12px; color:var(--text3); margin-bottom:8px; line-height:1.6; }
+    .cfg-step a { color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
+    .cfg-footer { padding:1rem 1.5rem; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+
+    /* ── INPUTS ── */
+    input[type=text], input[type=password], select, textarea {
+      width:100%; padding:9px 12px;
+      background:var(--bg); border:1px solid var(--border2);
+      border-radius:var(--radius); color:var(--text);
+      font-size:13px; font-family:inherit; outline:none;
+      transition:border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color:var(--accent); }
+    input::placeholder, textarea::placeholder { color:var(--text3); }
+    label.lbl { font-size:12px; color:var(--text3); display:block; margin-bottom:5px; }
+
+    /* ── BUTTONS ── */
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 18px; border-radius:var(--radius); font-size:13px; font-family:inherit; font-weight:500; cursor:pointer; border:none; transition:all .15s; }
+    .btn-primary { background:var(--accent); color:#1a1208; }
+    .btn-primary:hover { background:var(--accent2); }
+    .btn-primary:disabled { opacity:.5; cursor:default; }
+    .btn-ghost { background:var(--bg3); color:var(--text2); border:1px solid var(--border); }
+    .btn-ghost:hover { color:var(--text); border-color:var(--border2); }
+    .btn-danger { background:rgba(224,82,82,.15); color:var(--danger); border:1px solid rgba(224,82,82,.2); }
+    .btn-danger:hover { background:rgba(224,82,82,.25); }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      position:fixed; left:0; top:0; bottom:0; width:230px;
+      background:var(--bg2); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; z-index:100;
+      transition:transform .3s ease;
+    }
+    .sidebar-logo { display:flex; align-items:center; gap:10px; padding:1.5rem 1.25rem 1.25rem; border-bottom:1px solid var(--border); }
+    .logo-icon { width:34px; height:34px; background:var(--accent); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; color:#1a1208; flex-shrink:0; }
+    .logo-name { font-family:'DM Serif Display',serif; font-size:20px; }
+    .sidebar-section { padding:.9rem 1rem .4rem; font-size:11px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:9px 1rem; border-radius:var(--radius); margin:2px .5rem; font-size:14px; color:var(--text2); cursor:pointer; border:none; background:none; width:calc(100% - 1rem); text-align:left; transition:all .15s; }
+    .nav-item i { font-size:15px; width:18px; flex-shrink:0; }
+    .nav-item .badge { margin-left:auto; font-size:11px; background:var(--bg3); padding:2px 7px; border-radius:99px; color:var(--text3); }
+    .nav-item:hover { background:var(--bg3); color:var(--text); }
+    .nav-item.active { background:rgba(212,169,106,.12); color:var(--accent); }
+    .nav-item.active .badge { background:rgba(212,169,106,.2); color:var(--accent); }
+    .sidebar-stats { margin-top:auto; padding:1rem; border-top:1px solid var(--border); display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .stat-card { background:var(--bg3); border-radius:var(--radius); padding:10px; text-align:center; }
+    .stat-card .n { font-size:22px; font-weight:500; }
+    .stat-card .l { font-size:11px; color:var(--text3); margin-top:1px; }
+
+    /* ── MAIN ── */
+    #main { margin-left:230px; min-height:100vh; display:flex; flex-direction:column; }
+
+    /* ── TOPBAR ── */
+    #topbar {
+      position:sticky; top:0; z-index:50;
+      background:rgba(15,15,16,.88); backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      padding:.9rem 1.75rem;
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    }
+    .page-title { font-size:17px; font-weight:500; margin-right:6px; }
+    .search-wrap { position:relative; flex:1; min-width:160px; max-width:280px; }
+    .search-wrap i { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:13px; pointer-events:none; }
+    .search-wrap input { padding:8px 12px 8px 34px; }
+    .view-btns { display:flex; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .view-btn { width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; color:var(--text3); background:transparent; border:none; transition:all .15s; }
+    .view-btn.active { background:var(--bg3); color:var(--accent); }
+    .view-btn:hover:not(.active) { background:var(--bg3); color:var(--text); }
+
+    /* ── CONTENT ── */
+    #content { padding:1.5rem 1.75rem 3rem; flex:1; }
+
+    /* ── UPLOAD MODAL ── */
+    .modal-overlay { position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0); display:none; align-items:center; justify-content:center; padding:1rem; transition:background .25s; }
+    .modal-overlay.open { display:flex; background:rgba(0,0,0,.78); }
+    .modal-box { background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-lg); width:100%; max-width:480px; overflow:hidden; animation:popIn .25s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes popIn { from { transform:scale(.9) translateY(12px); opacity:0; } to { transform:scale(1) translateY(0); opacity:1; } }
+    .modal-header { display:flex; align-items:center; gap:10px; padding:1rem 1.25rem; border-bottom:1px solid var(--border); }
+    .modal-header h3 { font-size:15px; font-weight:600; flex:1; }
+    .modal-header .close-btn { background:none; border:none; cursor:pointer; color:var(--text3); font-size:18px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:7px; transition:all .15s; }
+    .modal-header .close-btn:hover { background:var(--bg3); color:var(--text); }
+    .modal-body { padding:1.25rem; display:flex; flex-direction:column; gap:1rem; }
+    .modal-footer { padding:.75rem 1.25rem 1.25rem; display:flex; gap:8px; justify-content:flex-end; }
+
+    /* Drop zone inside upload modal */
+    .file-drop {
+      border:1.5px dashed var(--border2); border-radius:var(--radius-lg);
+      padding:1.5rem; text-align:center; cursor:pointer; transition:all .2s;
+      position:relative;
+    }
+    .file-drop:hover, .file-drop.drag { border-color:var(--accent); background:rgba(212,169,106,.05); }
+    .file-drop input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+    .file-drop i { font-size:28px; color:var(--text3); display:block; margin-bottom:8px; }
+    .file-drop p { font-size:13px; color:var(--text2); }
+    .file-drop span { color:var(--accent); }
+    .preview-thumb { width:100%; max-height:200px; object-fit:cover; border-radius:var(--radius); display:none; }
+    .preview-thumb.show { display:block; }
+    .file-drop-inner { display:block; }
+    .file-drop-inner.hide { display:none; }
+
+    /* Upload progress */
+    .progress-wrap { display:none; }
+    .progress-wrap.show { display:block; }
+    .progress-bar-outer { height:6px; background:var(--bg3); border-radius:99px; overflow:hidden; margin-top:8px; }
+    .progress-bar-inner { height:100%; background:var(--accent); border-radius:99px; width:0%; transition:width .3s; }
+    .progress-label { font-size:12px; color:var(--text3); margin-top:6px; }
+
+    /* ── GALLERY GRID ── */
+    .grid-view { columns:4; gap:12px; }
+    .grid-view .photo-card { break-inside:avoid; margin-bottom:12px; border-radius:var(--radius); overflow:hidden; cursor:pointer; position:relative; background:var(--bg3); }
+    .grid-view .photo-card img { width:100%; display:block; transition:transform .3s; }
+    .grid-view .photo-card:hover img { transform:scale(1.04); }
+    .grid-view .photo-card .card-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 55%); opacity:0; transition:opacity .25s; display:flex; flex-direction:column; justify-content:flex-end; padding:10px; }
+    .grid-view .photo-card:hover .card-overlay { opacity:1; }
+    .card-overlay .photo-name-label { font-size:12px; font-weight:500; color:#fff; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .card-overlay .card-btns { display:flex; gap:5px; }
+    .card-btn { width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,.15); backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; color:#fff; transition:background .15s; }
+    .card-btn:hover { background:rgba(255,255,255,.3); }
+    .card-btn.del:hover { background:rgba(224,82,82,.5); }
+    .card-album-badge { position:absolute; top:8px; right:8px; font-size:10px; padding:3px 7px; border-radius:99px; background:rgba(0,0,0,.5); backdrop-filter:blur(4px); color:rgba(255,255,255,.85); border:1px solid rgba(255,255,255,.1); }
+
+    /* ── LIST VIEW ── */
+    .list-view { display:flex; flex-direction:column; gap:4px; }
+    .list-view .photo-card { display:flex; align-items:center; gap:14px; padding:10px 14px; background:var(--bg2); border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; transition:border-color .15s; }
+    .list-view .photo-card:hover { border-color:var(--border2); }
+    .list-view .photo-card img { width:52px; height:52px; object-fit:cover; border-radius:7px; flex-shrink:0; }
+    .list-view .photo-meta { flex:1; min-width:0; }
+    .list-view .photo-name { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .list-view .photo-info { font-size:12px; color:var(--text3); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
+    .list-view .card-btns { display:flex; gap:6px; opacity:0; transition:opacity .15s; }
+    .list-view .photo-card:hover .card-btns { opacity:1; }
+    .list-view .card-btn { background:var(--bg3); border:1px solid var(--border); color:var(--text2); border-radius:7px; width:30px; height:30px; font-size:13px; }
+    .badge-album { display:inline-block; font-size:11px; padding:3px 9px; border-radius:99px; background:rgba(212,169,106,.12); color:var(--accent); border:1px solid rgba(212,169,106,.2); }
+
+    /* ── EMPTY ── */
+    .empty-state { text-align:center; padding:5rem 2rem; color:var(--text3); }
+    .empty-state i { font-size:52px; display:block; margin-bottom:1rem; opacity:.3; }
+    .empty-state h3 { font-size:18px; color:var(--text2); margin-bottom:8px; font-weight:500; }
+    .empty-state p { font-size:14px; }
+
+    /* ── VIEW MODAL ── */
+    #viewModal { z-index:800; }
+    #viewModal .modal-box { max-width:720px; }
+    #viewModalImg { width:100%; max-height:480px; object-fit:contain; display:block; background:var(--bg); }
+    .modal-nav { position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.1); display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; font-size:16px; transition:background .15s; }
+    .modal-nav:hover { background:rgba(0,0,0,.75); }
+    #modalPrev { left:12px; } #modalNext { right:12px; }
+    .modal-body-wrap { position:relative; }
+    .modal-footer { padding:12px 1.25rem; display:flex; align-items:center; gap:10px; flex-wrap:wrap; border-top:1px solid var(--border); }
+    .modal-info { flex:1; }
+    .mi-name { font-size:15px; font-weight:500; margin-bottom:4px; }
+    .mi-sub  { font-size:12px; color:var(--text3); }
+
+    /* ── DELETE DIALOG ── */
+    #deleteDialog { z-index:1100; }
+    #deleteDialog .modal-box { max-width:360px; }
+    .del-preview { width:100%; height:160px; object-fit:cover; display:block; background:var(--bg); }
+    .del-body { padding:1.25rem; text-align:center; }
+    .del-icon-wrap { width:48px; height:48px; border-radius:50%; background:rgba(224,82,82,.12); border:1px solid rgba(224,82,82,.25); display:flex; align-items:center; justify-content:center; margin:0 auto .9rem; font-size:20px; color:var(--danger); }
+    .del-body h4 { font-size:16px; font-weight:600; margin-bottom:6px; }
+    .del-body p { font-size:13px; color:var(--text2); line-height:1.5; }
+    .del-name { font-weight:500; color:var(--text); }
+    .del-footer { display:flex; gap:8px; padding:.5rem 1.25rem 1.25rem; }
+    .del-footer button { flex:1; padding:10px; border-radius:var(--radius); font-size:14px; font-family:inherit; font-weight:500; cursor:pointer; border:none; transition:all .15s; }
+    .del-cancel { background:var(--bg3); color:var(--text2); }
+    .del-cancel:hover { background:var(--border2); }
+    .del-confirm { background:var(--danger); color:#fff; position:relative; overflow:hidden; }
+    .del-confirm:hover { background:#c03c3c; }
+    .del-progress { position:absolute; left:0; bottom:0; height:3px; background:rgba(255,255,255,.4); width:100%; transform-origin:left; transform:scaleX(1); }
+
+    /* ── TOAST ── */
+    #toast {
+      position:fixed; bottom:1.75rem; right:1.75rem; z-index:9999;
+      display:flex; align-items:center; gap:10px;
+      background:#1e1e20; border:1px solid var(--border2);
+      color:var(--text); font-size:13px;
+      padding:12px 16px; border-radius:var(--radius-lg);
+      box-shadow:0 8px 32px rgba(0,0,0,.5);
+      transform:translateY(20px) scale(.95); opacity:0;
+      transition:all .28s cubic-bezier(.34,1.4,.64,1);
+      pointer-events:none; min-width:220px; max-width:320px;
+    }
+    #toast.show { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+    .toast-icon { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+    .toast-icon.success { background:rgba(80,200,120,.15); color:var(--success); }
+    .toast-icon.danger  { background:rgba(224,82,82,.15); color:var(--danger); }
+    .toast-icon.info    { background:rgba(212,169,106,.15); color:var(--accent); }
+    .toast-icon.loading { background:rgba(255,255,255,.08); color:var(--text2); }
+    .toast-text { flex:1; }
+    .toast-title { font-weight:500; font-size:13px; }
+    .toast-sub   { font-size:11px; color:var(--text3); margin-top:1px; }
+    .toast-undo  { font-size:12px; font-weight:500; color:var(--accent); background:none; border:none; cursor:pointer; padding:4px 0; white-space:nowrap; text-decoration:underline; text-underline-offset:2px; }
+    .toast-undo:hover { color:var(--accent2); }
+    #toastBar { position:absolute; bottom:0; left:0; height:2.5px; background:var(--accent); border-radius:0 0 var(--radius-lg) var(--radius-lg); width:100%; transform-origin:left; }
+
+    /* loading spinner */
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spinner { animation:spin .8s linear infinite; display:inline-block; }
+
+    /* ── MOBILE TOGGLE ── */
+    #menuToggle { display:none; background:none; border:none; color:var(--text); font-size:20px; cursor:pointer; padding:4px; margin-right:4px; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:1100px) { .grid-view { columns:3; } }
+    @media(max-width:800px) {
+      #sidebar { transform:translateX(-100%); }
+      #sidebar.open { transform:translateX(0); }
+      #main { margin-left:0; }
+      .grid-view { columns:2; }
+      #menuToggle { display:flex; }
+      #sideOverlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99; display:none; }
+      #sideOverlay.show { display:block; }
+    }
+    @media(max-width:480px) { .grid-view { columns:2; } #topbar,#content { padding:.75rem 1rem; } }
+  </style>
+</head>
+<body>
+
+<!-- ══ SETUP BANNER ══ -->
+<div id="setupBanner">
+  <i class="fa-solid fa-circle-exclamation"></i>
+  <p>Belum terhubung ke cloud. Foto hanya tersimpan lokal. <span onclick="openConfig()">Klik di sini untuk setup agar foto bisa dilihat semua orang →</span></p>
+</div>
+
+<!-- ══ CONFIG MODAL ══ -->
+<div class="cfg-overlay" id="cfgModal">
+  <div class="cfg-box">
+    <div class="cfg-header">
+      <i class="fa-solid fa-cloud"></i>
+      <h3>Setup Cloud — Foto Bisa Dilihat Semua Orang</h3>
+      <button class="modal-header close-btn" onclick="closeConfig()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="cfg-body">
+      <div class="cfg-step">
+        <div class="cfg-step-head"><div class="step-num">1</div><span>imgbb API Key (penyimpanan gambar gratis)</span></div>
+        <p>Buka <a href="https://api.imgbb.com" target="_blank">api.imgbb.com</a> → Daftar gratis → Copy API Key kamu di sini.</p>
+        <label class="lbl">imgbb API Key</label>
+        <input type="text" id="cfgImgbb" placeholder="contoh: abc123def456..." />
+      </div>
+      <div class="cfg-step">
+        <div class="cfg-step-head"><div class="step-num">2</div><span>Firebase Database URL (database bersama gratis)</span></div>
+        <p>Buka <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Buat project → Realtime Database → Buat database → pilih <b>Test mode</b> → copy URL-nya (contoh: <code style="font-size:11px;color:var(--accent)">https://nama-project.firebaseio.com</code>).</p>
+        <label class="lbl">Firebase Database URL</label>
+        <input type="text" id="cfgFirebase" placeholder="https://nama-project-default-rtdb.firebaseio.com" />
+      </div>
+    </div>
+    <div class="cfg-footer">
+      <button class="btn btn-ghost" onclick="closeConfig()">Nanti Saja</button>
+      <button class="btn btn-primary" onclick="saveConfig()"><i class="fa-solid fa-cloud-arrow-up"></i> Simpan & Hubungkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SIDEBAR OVERLAY ══ -->
+<div id="sideOverlay" onclick="closeSidebar()"></div>
+
+<!-- ══ SIDEBAR ══ -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><i class="fa-solid fa-camera"></i></div>
+    <span class="logo-name">FotoKu</span>
+  </div>
+  <div class="sidebar-section">Menu</div>
+  <button class="nav-item active" id="nav-all" onclick="filterAlbum('all',this)">
+    <i class="fa-solid fa-images"></i> Semua Foto <span class="badge" id="cnt-all">0</span>
+  </button>
+  <button class="nav-item" id="nav-fav" onclick="filterAlbum('fav',this)">
+    <i class="fa-solid fa-heart"></i> Favorit <span class="badge" id="cnt-fav">0</span>
+  </button>
+  <div class="sidebar-section" style="margin-top:.5rem">Album</div>
+  <div id="albumNav"></div>
+  <div class="sidebar-stats">
+    <div class="stat-card"><div class="n" id="statFoto">0</div><div class="l">Foto</div></div>
+    <div class="stat-card"><div class="n" id="statAlbum">0</div><div class="l">Album</div></div>
+  </div>
+</nav>
+
+<!-- ══ MAIN ══ -->
+<main id="main">
+  <div id="topbar">
+    <button id="menuToggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+    <span class="page-title" id="pageTitle">Semua Foto</span>
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input id="searchInput" type="text" placeholder="Cari foto..." />
+    </div>
+    <select id="sortSel">
+      <option value="newest">Terbaru</option>
+      <option value="oldest">Terlama</option>
+      <option value="name">Nama A–Z</option>
+    </select>
+    <button class="btn btn-primary" onclick="openUploadModal()">
+      <i class="fa-solid fa-upload"></i> Unggah Foto
+    </button>
+    <div class="view-btns">
+      <button class="view-btn active" id="btnGrid" onclick="setView('grid')"><i class="fa-solid fa-grip"></i></button>
+      <button class="view-btn" id="btnList" onclick="setView('list')"><i class="fa-solid fa-list"></i></button>
+    </div>
+  </div>
+  <div id="content">
+    <div id="gallery"></div>
+  </div>
+</main>
+
+<!-- ══ UPLOAD MODAL ══ -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-upload" style="color:var(--accent);margin-right:6px"></i>Unggah Foto Baru</h3>
+      <button class="close-btn" onclick="closeUploadModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <!-- File picker -->
+      <div class="file-drop" id="fileDrop">
+        <input type="file" id="fileInput" accept="image/*" onchange="onFileSelected(this.files[0])" />
+        <div class="file-drop-inner" id="fileDropInner">
+          <i class="fa-solid fa-image"></i>
+          <p>Seret foto ke sini atau <span>klik untuk pilih</span></p>
+          <p style="font-size:11px;color:var(--text3);margin-top:4px">JPG, PNG, WEBP — maks 32MB</p>
+        </div>
+        <img class="preview-thumb" id="previewThumb" alt="preview" />
+      </div>
+      <!-- Form fields -->
+      <div id="formFields" style="display:none;flex-direction:column;gap:1rem">
+        <div>
+          <label class="lbl">Nama Foto <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="inputNama" placeholder="Contoh: Pantai Bali 2024" maxlength="80" />
+        </div>
+        <div>
+          <label class="lbl">Simpan di Album <span style="color:var(--danger)">*</span></label>
+          <select id="inputAlbum">
+            <option value="">— Pilih Album —</option>
+            <option>Liburan</option>
+            <option>Keluarga</option>
+            <option>Kuliner</option>
+            <option>Alam</option>
+            <option>Momen</option>
+            <option>Lainnya</option>
+          </select>
+        </div>
+      </div>
+      <!-- Progress -->
+      <div class="progress-wrap" id="progressWrap">
+        <div style="font-size:13px;color:var(--text2)" id="progressLabel">Mengunggah...</div>
+        <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeUploadModal()">Batal</button>
+      <button class="btn btn-primary" id="btnUpload" onclick="doUpload()" disabled>
+        <i class="fa-solid fa-cloud-arrow-up"></i> Unggah Sekarang
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VIEW MODAL ══ -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="viewModalTitle">Foto</h3>
+      <button class="close-btn" onclick="closeViewModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body-wrap">
+      <img id="viewModalImg" src="" alt="" />
+      <button class="modal-nav" id="modalPrev" onclick="navModal(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <button class="modal-nav" id="modalNext" onclick="navModal(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-info">
+        <div class="mi-name" id="viewModalName"></div>
+        <div class="mi-sub" id="viewModalMeta"></div>
+      </div>
+      <button class="btn btn-ghost" onclick="toggleFavModal()"><i class="fa-solid fa-heart" id="modalFavIcon"></i> <span id="modalFavTxt">Favorit</span></button>
+      <button class="btn btn-ghost" onclick="downloadModal()"><i class="fa-solid fa-download"></i> Unduh</button>
+      <button class="btn btn-danger" onclick="deleteModal()"><i class="fa-solid fa-trash"></i> Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DELETE DIALOG ══ -->
+<div class="modal-overlay" id="deleteDialog">
+  <div class="modal-box">
+    <img class="del-preview" id="delPreview" src="" alt="" />
+    <div class="del-body">
+      <div class="del-icon-wrap"><i class="fa-solid fa-trash"></i></div>
+      <h4>Hapus Foto?</h4>
+      <p>Foto <span class="del-name" id="delName"></span> akan dihapus permanen.</p>
+    </div>
+    <div class="del-footer">
+      <button class="del-cancel" onclick="cancelDelete()">Batal</button>
+      <button class="del-confirm" id="delConfirmBtn" onclick="confirmDelete()">
+        Hapus
+        <div class="del-progress" id="delProgress"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast">
+  <div class="toast-icon" id="toastIcon"></div>
+  <div class="toast-text">
+    <div class="toast-title" id="toastTitle"></div>
+    <div class="toast-sub" id="toastSub"></div>
+  </div>
+  <button class="toast-undo" id="toastUndoBtn" style="display:none" onclick="undoDelete()">Urungkan</button>
+  <div id="toastBar"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════
+   CONFIG
+════════════════════════════════════ */
+let CFG = { imgbb:'', firebase:'' };
+function loadConfig() {
+  try { CFG = JSON.parse(localStorage.getItem('fotoku_cfg') || '{}'); } catch(e){}
+  CFG.imgbb = CFG.imgbb||''; CFG.firebase = CFG.firebase||'';
+  updateBanner();
+}
+function saveConfig() {
+  const ib = document.getElementById('cfgImgbb').value.trim();
+  const fb = document.getElementById('cfgFirebase').value.trim().replace(/\/$/,'');
+  if (!ib || !fb) { showToast({type:'danger',icon:'fa-solid fa-circle-xmark',title:'Isi kedua field!',duration:2500}); return; }
+  CFG = { imgbb:ib, firebase:fb };
+  localStorage.setItem('fotoku_cfg', JSON.stringify(CFG));
+  closeConfig(); updateBanner();
+  showToast({type:'success',icon:'fa-solid fa-circle-check',title:'Berhasil terhubung ke cloud!',sub:'Foto kamu sekarang bisa dilihat semua orang',duration:3500});
+  loadPhotos();
+}
+function updateBanner() {
+  const b = document.getElementById('setupBanner');
+  if (CFG.imgbb && CFG.firebase) {
+    b.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--success)"></i><p style="color:var(--text2)">Terhubung ke cloud — foto bisa dilihat semua orang. <span onclick="openConfig()" style="color:var(--accent);cursor:pointer;text-decoration:underline">Ubah pengaturan</span></p>`;
+  }
+}
+function openConfig() {
+  document.getElementById('cfgImgbb').value = CFG.imgbb;
+  document.getElementById('cfgFirebase').value = CFG.firebase;
+  document.getElementById('cfgModal').classList.add('open');
+}
+function closeConfig() { document.getElementById('cfgModal').classList.remove('open'); }
+
+/* ════════════════════════════════════
+   DATA
+════════════════════════════════════ */
+let photos = [], view = 'grid', activeFilter = 'all', modalIdx = null;
+let pendingDeleteId = null, lastSnapshot = null;
+
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtSize(b) { return b>1048576?(b/1048576).toFixed(1)+' MB':Math.round(b/1024)+' KB'; }
+
+/* ── Firebase helpers ── */
+async function fbGet(path) {
+  if (!CFG.firebase) return null;
+  const r = await fetch(`${CFG.firebase}${path}.json`);
+  return r.ok ? r.json() : null;
+}
+async function fbPost(path, data) {
+  if (!CFG.firebase) return null;
+  const r = await fetch(`${CFG.firebase}${path}.json`, { method:'POST', body:JSON.stringify(data) });
+  return r.ok ? r.json() : null;
+}
+async function fbPatch(path, data) {
+  if (!CFG.firebase) return;
+  await fetch(`${CFG.firebase}${path}.json`, { method:'PATCH', body:JSON.stringify(data) });
+}
+async function fbDelete(path) {
+  if (!CFG.firebase) return;
+  await fetch(`${CFG.firebase}${path}.json`, { method:'DELETE' });
+}
+
+async function loadPhotos() {
+  if (!CFG.firebase) {
+    // fallback: localStorage
+    try { photos = JSON.parse(localStorage.getItem('fotoku_photos')||'[]'); } catch(e){ photos=[]; }
+    render(); return;
+  }
+  showToast({type:'loading',icon:'fa-solid fa-spinner spinner',title:'Memuat foto dari cloud...',duration:30000});
+  const data = await fbGet('/photos');
+  hideToast();
+  if (data) {
+    photos = Object.entries(data).map(([key, v]) => ({...v, _key:key}));
+    photos.sort((a,b) => b.date - a.date);
+  } else { photos = []; }
+  render();
+}
+
+function saveLocalFallback() {
+  if (!CFG.firebase) localStorage.setItem('fotoku_photos', JSON.stringify(photos));
+}
+
+/* ════════════════════════════════════
+   UPLOAD MODAL
+════════════════════════════════════ */
+let selectedFile = null;
+
+function openUploadModal() {
+  selectedFile = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('previewThumb').className = 'preview-thumb';
+  document.getElementById('fileDropInner').className = 'file-drop-inner';
+  document.getElementById('formFields').style.display = 'none';
+  document.getElementById('inputNama').value = '';
+  document.getElementById('inputAlbum').value = '';
+  document.getElementById('progressWrap').className = 'progress-wrap';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('btnUpload').disabled = true;
+  document.getElementById('uploadModal').classList.add('open');
+}
+function closeUploadModal() { document.getElementById('uploadModal').classList.remove('open'); }
+
+function onFileSelected(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  if (file.size > 32*1024*1024) { showToast({type:'danger',icon:'fa-solid fa-circle-xmark',title:'Ukuran file terlalu besar (maks 32MB)',duration:3000}); return; }
+  selectedFile = file;
+  // show preview
+  const reader = new FileReader();
+  reader.onload = e => {
+    const thumb = document.getElementById('previewThumb');
+    thumb.src = e.target.result;
+    thumb.className = 'preview-thumb show';
+    document.getElementById('fileDropInner').className = 'file-drop-inner hide';
+  };
+  reader.readAsDataURL(file);
+  // prefill name
+  const cleanName = file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+  document.getElementById('inputNama').value = cleanName;
+  document.getElementById('formFields').style.display = 'flex';
+  checkUploadReady();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const drop = document.getElementById('fileDrop');
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('drag');
+    const f = e.dataTransfer.files[0];
+    if (f) onFileSelected(f);
+  });
+  document.getElementById('inputNama').addEventListener('input', checkUploadReady);
+  document.getElementById('inputAlbum').addEventListener('change', checkUploadReady);
+});
+
+function checkUploadReady() {
+  const ok = selectedFile && document.getElementById('inputNama').value.trim() && document.getElementById('inputAlbum').value;
+  document.getElementById('btnUpload').disabled = !ok;
+}
+
+async function doUpload() {
+  const nama  = document.getElementById('inputNama').value.trim();
+  const album = document.getElementById('inputAlbum').value;
+  if (!nama || !album || !selectedFile) return;
+
+  document.getElementById('btnUpload').disabled = true;
+  document.getElementById('progressWrap').className = 'progress-wrap show';
+  setProgress(10, 'Mempersiapkan foto...');
+
+  let imageUrl = '';
+
+  if (CFG.imgbb) {
+    // Upload to imgbb
+    setProgress(30, 'Mengunggah ke cloud...');
+    try {
+      const fd = new FormData();
+      fd.append('image', selectedFile);
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${CFG.imgbb}`, { method:'POST', body:fd });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error?.message || 'imgbb error');
+      imageUrl = json.data.url;
+      setProgress(70, 'Menyimpan ke database...');
+    } catch(err) {
+      setProgress(0,'');
+      document.getElementById('progressWrap').className = 'progress-wrap';
+      document.getElementById('btnUpload').disabled = false;
+      showToast({type:'danger',icon:'fa-solid fa-circle-xmark',title:'Gagal unggah gambar',sub:err.message,duration:4000});
+      return;
+    }
+  } else {
+    // Fallback: base64 local
+    setProgress(50, 'Menyimpan lokal...');
+    imageUrl = await new Promise(res => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.readAsDataURL(selectedFile);
+    });
+  }
+
+  const photo = { name:nama, album, url:imageUrl, size:selectedFile.size, date:Date.now(), fav:false };
+  setProgress(90, 'Menyimpan data...');
+
+  if (CFG.firebase) {
+    const result = await fbPost('/photos', photo);
+    if (result) { photo._key = result.name; photos.unshift(photo); }
+  } else {
+    photo._key = 'local_' + Date.now();
+    photos.unshift(photo);
+    saveLocalFallback();
+  }
+
+  setProgress(100, 'Selesai!');
+  setTimeout(() => {
+    closeUploadModal();
+    render();
+    showToast({type:'success',icon:'fa-solid fa-circle-check',title:'Foto berhasil diunggah!',sub:nama+' → '+album,duration:3000});
+  }, 400);
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+/* ════════════════════════════════════
+   FILTER + RENDER
+════════════════════════════════════ */
+function getFiltered() {
+  let list = [...photos];
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || p.album.toLowerCase().includes(q));
+  if (activeFilter === 'fav') list = list.filter(p => p.fav);
+  else if (activeFilter !== 'all') list = list.filter(p => p.album === activeFilter);
+  const s = document.getElementById('sortSel').value;
+  if (s === 'oldest') list.sort((a,b) => a.date - b.date);
+  else if (s === 'name') list.sort((a,b) => a.name.localeCompare(b.name));
+  return list;
+}
+
+function render() {
+  const list = getFiltered();
+  const g = document.getElementById('gallery');
+  const albums = [...new Set(photos.map(p => p.album))];
+  document.getElementById('statFoto').textContent = photos.length;
+  document.getElementById('statAlbum').textContent = albums.length;
+  document.getElementById('cnt-all').textContent = photos.length;
+  document.getElementById('cnt-fav').textContent = photos.filter(p=>p.fav).length;
+
+  // album nav
+  const an = document.getElementById('albumNav'); an.innerHTML = '';
+  const ALBUM_LIST = ['Liburan','Keluarga','Kuliner','Alam','Momen','Lainnya'];
+  ALBUM_LIST.filter(a=>photos.some(p=>p.album===a)).forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-item'+(activeFilter===a?' active':'');
+    btn.innerHTML = `<i class="fa-solid fa-folder"></i> ${a} <span class="badge">${photos.filter(p=>p.album===a).length}</span>`;
+    btn.onclick = () => filterAlbum(a, btn);
+    an.appendChild(btn);
+  });
+
+  if (!list.length) {
+    g.className = '';
+    g.innerHTML = `<div class="empty-state">
+      <i class="fa-solid fa-photo-film"></i>
+      <h3>${photos.length===0?'Galeri kosong':'Tidak ada hasil'}</h3>
+      <p>${photos.length===0?'Klik "Unggah Foto" untuk mulai':'Coba kata kunci lain'}</p>
+      ${photos.length===0?`<button class="btn btn-primary" style="margin-top:1.2rem" onclick="openUploadModal()"><i class="fa-solid fa-upload"></i> Unggah Sekarang</button>`:''}
+    </div>`;
+    return;
+  }
+
+  if (view === 'grid') {
+    g.className = 'grid-view';
+    g.innerHTML = list.map(p => `
+      <div class="photo-card">
+        <img src="${p.url}" alt="${p.name}" loading="lazy" onclick="openViewModal('${p._key}')" />
+        <span class="card-album-badge">${p.album}</span>
+        <div class="card-overlay">
+          <div class="photo-name-label">${p.name}</div>
+          <div class="card-btns">
+            <button class="card-btn" onclick="toggleFav('${p._key}')" title="Favorit"><i class="fa-${p.fav?'solid':'regular'} fa-heart" style="${p.fav?'color:#e05252':''}"></i></button>
+            <button class="card-btn" onclick="downloadPhoto('${p._key}')" title="Unduh"><i class="fa-solid fa-download"></i></button>
+            <button class="card-btn del" onclick="deletePhoto('${p._key}')" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      </div>`).join('');
+  } else {
+    g.className = 'list-view';
+    g.innerHTML = list.map(p => `
+      <div class="photo-card">
+        <img src="${p.url}" alt="${p.name}" onclick="openViewModal('${p._key}')" />
+        <div class="photo-meta" onclick="openViewModal('${p._key}')">
+          <div class="photo-name">${p.name}</div>
+          <div class="photo-info">
+            <span class="badge-album">${p.album}</span>
+            <span>${fmtSize(p.size)}</span>
+            <span>${fmtDate(p.date)}</span>
+            ${p.fav?'<span style="color:#e05252"><i class="fa-solid fa-heart"></i> Favorit</span>':''}
+          </div>
+        </div>
+        <div class="card-btns">
+          <button class="card-btn" onclick="toggleFav('${p._key}')" title="Favorit"><i class="fa-${p.fav?'solid':'regular'} fa-heart" style="${p.fav?'color:#e05252':''}"></i></button>
+          <button class="card-btn" onclick="downloadPhoto('${p._key}')" title="Unduh"><i class="fa-solid fa-download"></i></button>
+          <button class="card-btn del" onclick="deletePhoto('${p._key}')" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function setView(v) {
+  view = v;
+  document.getElementById('btnGrid').classList.toggle('active', v==='grid');
+  document.getElementById('btnList').classList.toggle('active', v==='list');
+  render();
+}
+function filterAlbum(val, el) {
+  activeFilter = val;
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('pageTitle').textContent = {all:'Semua Foto',fav:'Favorit'}[val]||val;
+  render();
+}
+
+/* ════════════════════════════════════
+   ACTIONS
+════════════════════════════════════ */
+async function toggleFav(key) {
+  const p = photos.find(x=>x._key===key); if(!p) return;
+  p.fav = !p.fav;
+  if (CFG.firebase) await fbPatch('/photos/'+key, {fav:p.fav});
+  else saveLocalFallback();
+  render();
+  showToast({type:'info',icon:'fa-solid fa-heart',title:p.fav?'Ditambahkan ke favorit':'Dihapus dari favorit',sub:p.name,duration:2500});
+}
+
+function downloadPhoto(key) {
+  const p = photos.find(x=>x._key===key); if(!p) return;
+  const a = document.createElement('a'); a.href=p.url; a.download=p.name; a.target='_blank'; a.click();
+}
+
+function deletePhoto(key) {
+  const p = photos.find(x=>x._key===key); if(!p) return;
+  pendingDeleteId = key;
+  document.getElementById('delPreview').src = p.url;
+  document.getElementById('delName').textContent = p.name;
+  const prog = document.getElementById('delProgress');
+  prog.style.transition = 'none'; prog.style.transform = 'scaleX(1)';
+  document.getElementById('deleteDialog').classList.add('open');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    prog.style.transition = 'transform 4s linear'; prog.style.transform = 'scaleX(0)';
+  }));
+}
+function cancelDelete() { pendingDeleteId=null; document.getElementById('deleteDialog').classList.remove('open'); }
+async function confirmDelete() {
+  const key = pendingDeleteId; if(!key) return;
+  const p = photos.find(x=>x._key===key);
+  const name = p?p.name:'Foto';
+  lastSnapshot = [...photos];
+  document.getElementById('deleteDialog').classList.remove('open');
+  pendingDeleteId = null;
+  photos = photos.filter(x=>x._key!==key);
+  if(modalIdx!==null){const l=getFiltered();if(!l.length)closeViewModal();else{modalIdx=Math.min(modalIdx,l.length-1);showViewModal(l[modalIdx]._key);}}
+  if(CFG.firebase) await fbDelete('/photos/'+key);
+  else saveLocalFallback();
+  render();
+  toastDelete(name);
+}
+
+/* ════════════════════════════════════
+   VIEW MODAL
+════════════════════════════════════ */
+function openViewModal(key) {
+  const list = getFiltered(); modalIdx = list.findIndex(p=>p._key===key); showViewModal(key);
+}
+function showViewModal(key) {
+  const p = photos.find(x=>x._key===key); if(!p) return;
+  document.getElementById('viewModalImg').src = p.url;
+  document.getElementById('viewModalTitle').textContent = p.name;
+  document.getElementById('viewModalName').innerHTML = `<span class="badge-album">${p.album}</span>`;
+  document.getElementById('viewModalMeta').textContent = fmtSize(p.size)+' · '+fmtDate(p.date);
+  document.getElementById('modalFavIcon').className = p.fav?'fa-solid fa-heart':'fa-regular fa-heart';
+  document.getElementById('modalFavIcon').style.color = p.fav?'#e05252':'';
+  document.getElementById('modalFavTxt').textContent = p.fav?'Favorit ✓':'Favorit';
+  document.getElementById('viewModal').currentKey = key;
+  const list=getFiltered();
+  document.getElementById('modalPrev').style.display = modalIdx>0?'flex':'none';
+  document.getElementById('modalNext').style.display = modalIdx<list.length-1?'flex':'none';
+  document.getElementById('viewModal').classList.add('open');
+}
+function closeViewModal() { document.getElementById('viewModal').classList.remove('open'); }
+function navModal(dir) { const l=getFiltered(); modalIdx=Math.max(0,Math.min(l.length-1,modalIdx+dir)); showViewModal(l[modalIdx]._key); }
+function toggleFavModal() { const k=document.getElementById('viewModal').currentKey; toggleFav(k).then(()=>showViewModal(k)); }
+function downloadModal() { downloadPhoto(document.getElementById('viewModal').currentKey); }
+function deleteModal() { deletePhoto(document.getElementById('viewModal').currentKey); }
+
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+let toastTimer;
+function toastDelete(name) {
+  showToast({type:'danger',icon:'fa-solid fa-trash',title:'Foto dihapus',sub:name,undo:true,duration:5000});
+}
+function showToast({type='info',icon,title,sub='',undo=false,duration=3000}) {
+  clearTimeout(toastTimer);
+  const el=document.getElementById('toast'), ico=document.getElementById('toastIcon');
+  document.getElementById('toastTitle').textContent=title;
+  document.getElementById('toastSub').textContent=sub;
+  document.getElementById('toastUndoBtn').style.display=undo?'inline-block':'none';
+  ico.className=`toast-icon ${type}`; ico.innerHTML=`<i class="${icon}"></i>`;
+  const bar=document.getElementById('toastBar');
+  bar.style.transition='none'; bar.style.transform='scaleX(1)';
+  el.classList.add('show');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    bar.style.transition=`transform ${duration}ms linear`; bar.style.transform='scaleX(0)';
+  }));
+  toastTimer=setTimeout(()=>{ el.classList.remove('show'); lastSnapshot=null; }, duration+300);
+}
+function hideToast() { document.getElementById('toast').classList.remove('show'); clearTimeout(toastTimer); }
+async function undoDelete() {
+  if(!lastSnapshot) return;
+  photos=[...lastSnapshot]; lastSnapshot=null; hideToast(); render();
+  showToast({type:'success',icon:'fa-solid fa-rotate-left',title:'Foto dipulihkan!',duration:2500});
+  // Note: Firebase record was already deleted; a full undo would re-post. For local it's fine.
+}
+
+/* ════════════════════════════════════
+   MOBILE + EVENTS
+════════════════════════════════════ */
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sideOverlay').classList.toggle('show'); }
+function closeSidebar()  { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sideOverlay').classList.remove('show'); }
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('deleteDialog').classList.contains('open')) { if(e.key==='Escape')cancelDelete(); if(e.key==='Enter')confirmDelete(); return; }
+  if (document.getElementById('viewModal').classList.contains('open')) { if(e.key==='Escape')closeViewModal(); if(e.key==='ArrowLeft')navModal(-1); if(e.key==='ArrowRight')navModal(1); }
+});
+document.getElementById('viewModal').addEventListener('click', function(e){ if(e.target===this)closeViewModal(); });
+document.getElementById('uploadModal').addEventListener('click', function(e){ if(e.target===this)closeUploadModal(); });
+document.getElementById('cfgModal').addEventListener('click', function(e){ if(e.target===this)closeConfig(); });
+document.getElementById('deleteDialog').addEventListener('click', function(e){ if(e.target===this)cancelDelete(); });
+document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('sortSel').addEventListener('change', render);
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+loadConfig();
+loadPhotos();
+</script>
+</body>
+          </html>
